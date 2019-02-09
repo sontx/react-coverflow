@@ -1,5 +1,5 @@
 {
-  "name": "react-coverflow",
+  "name": "@sontx/react-coverflow",
   "version": "0.2.18",
   "description": "Carousel of coverflow effect",
   "main": "main.js",
@@ -31,9 +31,8 @@
     "react-component"
   ],
   "author": {
-    "name": "andyyou",
-    "email": "andyyu0920@gmail.com",
-    "url": "http://andyyou.github.io/"
+    "name": "sontx",
+    "email": "xuanson33bk@gmail.com"
   },
   "license": "MIT",
   "dependencies": {
@@ -44,7 +43,7 @@
     "react": "^16.5.2",
     "react-dom": "^16.5.2"
   },
-  "url": "https://github.com/andyyou/react-coverflow.git",
+  "url": "https://github.com/sontx/react-coverflow.git",
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-eslint": "^9.0.0",

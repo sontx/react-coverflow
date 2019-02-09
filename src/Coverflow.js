@@ -48,6 +48,8 @@ class Coverflow extends Component {
     infiniteScroll: PropTypes.bool,
     width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    sizeRate: PropTypes.number,// rate = width / height
+    onChange: PropTypes.func,
   };
 
   static defaultProps = {
@@ -62,6 +64,8 @@ class Coverflow extends Component {
     infiniteScroll: false,
     width: 'auto',
     height: 'auto',
+    sizeRate: 1,
+    onChange: undefined
   };
 
   state = {
@@ -87,15 +91,23 @@ class Coverflow extends Component {
     if (eventListener) {
       window.addEventListener('resize', this.updateDimensions.bind(this));
     }
+
+    if (this.props.onChange) {
+      this.props.onChange(this.state.current);
+    }
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     if (this.props.active !== prevProps.active) {
       this.updateDimensions(this.props.active);
+    }
+    if (this.state.current !== prevState.current && this.props.onChange) {
+      this.props.onChange(this.state.current);
     }
   }
 
   componentWillUnmount() {
+    this.unmounting = true;
     const length = React.Children.count(this.props.children);
 
     TRANSITIONS.forEach(event => {
@@ -112,7 +124,12 @@ class Coverflow extends Component {
     // }
   }
 
+  componentWillReceiveProps(nextProps) {
+    this.setState({width: nextProps.width, height: nextProps.height});
+  }
+
   updateDimensions(active) {
+    if (this.unmounting) return;
     const { displayQuantityOfSide } = this.props;
     const length = React.Children.count(this.props.children);
     const center = this._center();
@@ -203,7 +220,7 @@ class Coverflow extends Component {
   }
 
   _handleFigureStyle(index, current) {
-    const { displayQuantityOfSide } = this.props;
+    const { displayQuantityOfSide, sizeRate } = this.props;
     const { width } = this.state;
     const style = {};
     const baseWidth = width / (displayQuantityOfSide * 2 + 1);
@@ -215,6 +232,8 @@ class Coverflow extends Component {
     opacity = depth === 2 ? 0.92 : opacity;
     opacity = depth === 3 ? 0.9 : opacity;
     opacity = current === index ? 1 : opacity;
+
+    style.height = `${baseWidth / sizeRate}px`;
     // Handle translateX
     if (index === current) {
       style.width = `${baseWidth}px`;
