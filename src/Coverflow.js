@@ -49,7 +49,9 @@ class Coverflow extends Component {
     width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     sizeRate: PropTypes.number,// rate = width / height
+    overlay: PropTypes.node,
     onChange: PropTypes.func,
+    onClick: PropTypes.func,
   };
 
   static defaultProps = {
@@ -65,7 +67,9 @@ class Coverflow extends Component {
     width: 'auto',
     height: 'auto',
     sizeRate: 1,
-    onChange: undefined
+    overlay: undefined,
+    onChange: undefined,
+    onClick: undefined,
   };
 
   state = {
@@ -277,6 +281,10 @@ class Coverflow extends Component {
       }
 
       this._removePointerEvents();
+
+      if (this.props.onClick) {
+        this.props.onClick(index);
+      }
     } else {
       // Move to the selected figure
       e.preventDefault();
@@ -290,9 +298,10 @@ class Coverflow extends Component {
   };
 
   _renderFigureNodes = () => {
-    const { enableHeading } = this.props;
+    const { enableHeading, overlay } = this.props;
     const { current } = this.state;
-    const figureNodes = React.Children.map(this.props.children, (child, index) => {
+    const clonedOverlay = overlay && React.cloneElement(overlay, {className: styles.overlay});
+    return React.Children.map(this.props.children, (child, index) => {
       const figureElement = React.cloneElement(child, {
         className: styles.cover,
       });
@@ -305,12 +314,12 @@ class Coverflow extends Component {
           style={style}
           ref={`figure_${index}`}
         >
+          {index === current && clonedOverlay}
           {figureElement}
           {enableHeading && <div className={styles.text}>{figureElement.props.alt}</div>}
         </figure>
       );
     });
-    return figureNodes;
   };
 
   _removePointerEvents() {
