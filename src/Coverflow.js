@@ -8,6 +8,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ReactDOM from 'react-dom';
 import Radium, { StyleRoot } from 'radium';
+import AlloyFinger from "alloyfinger";
 import styles from './stylesheets/coverflow.scss';
 
 const TOUCH = {
@@ -50,8 +51,10 @@ class Coverflow extends Component {
     height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     sizeRate: PropTypes.number,// rate = width / height
     overlay: PropTypes.node,
+    mobileMode: PropTypes.bool,
     onChange: PropTypes.func,
     onClick: PropTypes.func,
+    onLongHold: PropTypes.func,
   };
 
   static defaultProps = {
@@ -68,8 +71,10 @@ class Coverflow extends Component {
     height: 'auto',
     sizeRate: 1,
     overlay: undefined,
+    mobileMode: false,
     onChange: undefined,
     onClick: undefined,
+    onLongHold: undefined,
   };
 
   state = {
@@ -99,6 +104,8 @@ class Coverflow extends Component {
     if (this.props.onChange) {
       this.props.onChange(this.state.current);
     }
+
+    this._updateSwipeListener();
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -120,6 +127,10 @@ class Coverflow extends Component {
         this.refs[figureID].removeEventListener(event, HandleAnimationState.bind(this));
       }
     });
+
+    if (this.alloyFinger) {
+      this.alloyFinger.destroy();
+    }
 
     // const removeListener = window && window.removeEventListener;
 
@@ -157,21 +168,21 @@ class Coverflow extends Component {
   }
 
   render() {
-    const { enableScroll, navigation, infiniteScroll, media } = this.props;
+    const { enableScroll, navigation, infiniteScroll, media, mobileMode } = this.props;
     const { width, height, current } = this.state;
     const renderPrevBtn = infiniteScroll ? true : current > 0;
     const renderNextBtn = infiniteScroll ? true : current < this.props.children.length - 1;
     return (
       <StyleRoot>
         <div
+          ref="main"
           className={styles.container}
           style={
             Object.keys(media).length !== 0 ? media : { width: `${width}px`, height: `${height}px` }
           }
           onWheel={enableScroll ? this._handleWheel.bind(this) : null}
-          onTouchStart={this._handleTouchStart.bind(this)}
-          onTouchMove={this._handleTouchMove.bind(this)}
           onKeyDown={this._keyDown.bind(this)}
+          onContextMenu={mobileMode ? this._handleContextMenu : undefined}
           tabIndex="-1"
         >
           <div className={styles.coverflow}>
@@ -206,6 +217,33 @@ class Coverflow extends Component {
       </StyleRoot>
     );
   }
+
+  _handleContextMenu = (event) => {
+    event.preventDefault();
+    return false;
+  };
+
+  _updateSwipeListener = () => {
+    if (this.alloyFinger) {
+      this.alloyFinger.destroy();
+    }
+    const element = this.refs["main"];
+    if (!element) return;
+    this.alloyFinger = new AlloyFinger(element, {
+      longTap: this.props.onLongHold,
+      swipe: event => {
+        if (event.direction === "Right") {
+          if (this._hasPrevFigure()) {
+            this._handlePrevFigure();
+          }
+        } else if (event.direction === "Left") {
+          if (this._hasNextFigure()) {
+            this._handleNextFigure();
+          }
+        }
+      }
+    });
+  };
 
   /**
    * Private methods
@@ -387,36 +425,6 @@ class Coverflow extends Component {
 
       if (typeof func === 'function') {
         for (let i = 0; i < count; i++) func();
-      }
-    }
-  }
-
-  _handleTouchStart(e) {
-    TOUCH.lastX = e.nativeEvent.touches[0].clientX;
-    TOUCH.lastMove = this.state.move;
-  }
-
-  _handleTouchMove(e) {
-    e.preventDefault();
-    const { displayQuantityOfSide } = this.props;
-    const { width } = this.state;
-
-    const clientX = e.nativeEvent.touches[0].clientX;
-    const lastX = TOUCH.lastX;
-    const baseWidth = width / (displayQuantityOfSide * 2 + 1);
-    const move = clientX - lastX;
-    const totalMove = TOUCH.lastMove - move;
-    const sign = Math.abs(move) / move;
-
-    if (Math.abs(totalMove) >= baseWidth) {
-      let fn = null;
-      if (sign > 0) {
-        fn = this._handlePrevFigure();
-      } else if (sign < 0) {
-        fn = this._handleNextFigure();
-      }
-      if (typeof fn === 'function') {
-        fn();
       }
     }
   }
