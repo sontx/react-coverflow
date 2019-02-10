@@ -300,7 +300,9 @@ class Coverflow extends Component {
   _renderFigureNodes = () => {
     const { enableHeading, overlay } = this.props;
     const { current } = this.state;
-    const clonedOverlay = overlay && React.cloneElement(overlay, {className: styles.overlay});
+    const clonedOverlay = overlay && React.cloneElement(overlay, {
+      className: [styles.overlay, overlay.props.className].join(" ").trim()
+    });
     return React.Children.map(this.props.children, (child, index) => {
       const figureElement = React.cloneElement(child, {
         className: styles.cover,
